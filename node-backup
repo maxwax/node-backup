@@ -1,0 +1,62 @@
+#!/bin/bash
+
+#
+# node-backup - Archive /etc and key admin files then scp to archive dir
+#
+
+VERSION=2014.0615.03
+
+# Set a backup filename using hostname and date
+BACKUP_FILENAME=node-backup.data.$(hostname).$(date +%Y.%m%d).tar.gz
+
+# Set an output directory on the local node
+OUTPUT_DIR=/root/node-backup-data
+
+# Combine output dir and backup filename into a full path outut filename
+OUTPUT_FILE="$OUTPUT_DIR"/"$BACKUP_FILENAME"
+
+# List of directories to backup.  minimum: /etc
+# Others might be in /var /boot /usr/local..
+BACKUP_DIRS="/etc /root"
+
+# List of admin users who might have important files that should be backed up
+ADMIN_USERS_DIRS="/home/rmsel-admin /home/mspangler /home/sperry /home/espruill"
+
+# *** OR Filestor only
+#ADMIN_USERS_DIRS="/home/mspangler /home/tools"
+
+# Make the output directory if it doesn't exist
+if [[ ! -d "$OUTPUT_DIR" ]]
+then
+	mkdir "$OUTPUT_DIR"
+
+	# Did we make the output directory OK?
+	if [[ $? != 0 ]]
+	then
+		echo "I can't make an output directory."
+		exit 1
+	fi
+
+fi
+
+# Archive config files in key directories and those of key admin users
+# Exclude some wasteful desktop files that might be encountered on admin users
+# home directories
+tar \
+	--exclude "*.cache/*" \
+	--exclude "*.config/*" \
+	--exclude "*.mozilla/*" \
+	--exclude "*.googleearth/*" \
+	--exclude "*node-backup.data*" \
+	-cvzf "$OUTPUT_FILE" \
+ $BACKUP_DIRS $ADMIN_USERS_DIRS
+
+# If the tar went without error, let's copy it elsewhere
+if [[ $? != 0 ]]
+then
+	echo "Tar exited with an error, nothing copied to archive site."
+
+else
+	# Copy files to remote system
+	scp -i ~/.ssh/nodebackup "$OUTPUT_FILE" nodebackup@filestor:archives.$(hostname)
+fi
