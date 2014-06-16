@@ -4,7 +4,7 @@
 # node-backup - Archive /etc and key admin files then scp to archive dir
 #
 
-VERSION=2014.0615.03
+VERSION=2014.0615.04
 
 # Set a backup filename using hostname and date
 BACKUP_FILENAME=node-backup.data.$(hostname).$(date +%Y.%m%d).tar.gz
